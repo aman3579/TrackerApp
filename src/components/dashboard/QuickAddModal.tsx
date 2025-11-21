@@ -253,6 +253,24 @@ const QuickAddModal = ({ open, onClose, initialTab = 0 }: QuickAddModalProps) =>
                             fullWidth
                             value={financeCategory}
                             onChange={(e) => setFinanceCategory(e.target.value)}
+                            SelectProps={{
+                                native: false,
+                                MenuProps: {
+                                    PaperProps: {
+                                        style: {
+                                            maxHeight: 300,
+                                        },
+                                    },
+                                    anchorOrigin: {
+                                        vertical: 'bottom',
+                                        horizontal: 'left',
+                                    },
+                                    transformOrigin: {
+                                        vertical: 'top',
+                                        horizontal: 'left',
+                                    },
+                                },
+                            }}
                         >
                             {financeType === 'expense' ? (
                                 <>
