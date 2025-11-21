@@ -33,6 +33,7 @@ export const useFinance = () => {
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from localStorage
     useEffect(() => {
@@ -44,12 +45,15 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
                 console.error('Failed to parse transactions', e);
             }
         }
+        setIsLoaded(true);
     }, []);
 
-    // Save to localStorage
+    // Save to localStorage (only after initial load)
     useEffect(() => {
-        localStorage.setItem('tracker_transactions', JSON.stringify(transactions));
-    }, [transactions]);
+        if (isLoaded) {
+            localStorage.setItem('tracker_transactions', JSON.stringify(transactions));
+        }
+    }, [transactions, isLoaded]);
 
     const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
         const newTransaction: Transaction = {

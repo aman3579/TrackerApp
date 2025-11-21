@@ -30,6 +30,7 @@ export const useTasks = () => {
 
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from localStorage
     useEffect(() => {
@@ -41,12 +42,15 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 console.error('Failed to parse tasks', e);
             }
         }
+        setIsLoaded(true);
     }, []);
 
-    // Save to localStorage
+    // Save to localStorage (only after initial load)
     useEffect(() => {
-        localStorage.setItem('tracker_tasks', JSON.stringify(tasks));
-    }, [tasks]);
+        if (isLoaded) {
+            localStorage.setItem('tracker_tasks', JSON.stringify(tasks));
+        }
+    }, [tasks, isLoaded]);
 
     const addTask = (title: string, dueDate?: string, priority: 'low' | 'medium' | 'high' = 'medium') => {
         const newTask: Task = {

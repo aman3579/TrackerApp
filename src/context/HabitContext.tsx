@@ -30,6 +30,7 @@ export const useHabits = () => {
 
 export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [habits, setHabits] = useState<Habit[]>([]);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from local storage
     useEffect(() => {
@@ -41,12 +42,15 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 console.error('Failed to parse habits', e);
             }
         }
+        setIsLoaded(true);
     }, []);
 
-    // Save to local storage
+    // Save to local storage (only after initial load)
     useEffect(() => {
-        localStorage.setItem('tracker_habits', JSON.stringify(habits));
-    }, [habits]);
+        if (isLoaded) {
+            localStorage.setItem('tracker_habits', JSON.stringify(habits));
+        }
+    }, [habits, isLoaded]);
 
     const calculateStreak = (completedDates: string[]): number => {
         if (completedDates.length === 0) return 0;

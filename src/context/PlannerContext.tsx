@@ -28,6 +28,7 @@ export const usePlanner = () => {
 
 export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [blocks, setBlocks] = useState<TimeBlock[]>([]);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from localStorage
     useEffect(() => {
@@ -39,12 +40,15 @@ export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children })
                 console.error('Failed to parse planner blocks', e);
             }
         }
+        setIsLoaded(true);
     }, []);
 
-    // Save to localStorage
+    // Save to localStorage (only after initial load)
     useEffect(() => {
-        localStorage.setItem('tracker_planner', JSON.stringify(blocks));
-    }, [blocks]);
+        if (isLoaded) {
+            localStorage.setItem('tracker_planner', JSON.stringify(blocks));
+        }
+    }, [blocks, isLoaded]);
 
     const addBlock = (block: Omit<TimeBlock, 'id'>) => {
         const newBlock: TimeBlock = {
