@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { format, isSameDay, subDays } from 'date-fns';
+import { apiCall } from '../utils/api';
 
 export interface Habit {
     id: string;
@@ -16,6 +17,8 @@ interface HabitContextType {
     addHabit: (title: string, frequency: string[]) => void;
     toggleHabitCompletion: (id: string, date: Date) => void;
     deleteHabit: (id: string) => void;
+    isLoading: boolean;
+    error: string | null;
 }
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
@@ -30,27 +33,27 @@ export const useHabits = () => {
 
 export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [habits, setHabits] = useState<Habit[]>([]);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Load from local storage
+    // Load habits from API
     useEffect(() => {
-        const storedHabits = localStorage.getItem('tracker_habits');
-        if (storedHabits) {
+        const loadHabits = async () => {
             try {
-                setHabits(JSON.parse(storedHabits));
-            } catch (e) {
-                console.error('Failed to parse habits', e);
+                setIsLoading(true);
+                const data = await apiCall('/habits');
+                setHabits(data);
+                setError(null);
+            } catch (err: any) {
+                console.error('Failed to load habits:', err);
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
             }
-        }
-        setIsLoaded(true);
-    }, []);
+        };
 
-    // Save to local storage (only after initial load)
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('tracker_habits', JSON.stringify(habits));
-        }
-    }, [habits, isLoaded]);
+        loadHabits();
+    }, []);
 
     const calculateStreak = (completedDates: string[]): number => {
         if (completedDates.length === 0) return 0;
@@ -81,7 +84,7 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return streak;
     };
 
-    const addHabit = (title: string, frequency: string[] = ['Daily']) => {
+    const addHabit = async (title: string, frequency: string[] = ['Daily']) => {
         const newHabit: Habit = {
             id: crypto.randomUUID(),
             title,
@@ -90,38 +93,77 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             streak: 0,
             createdAt: Date.now(),
         };
+
+        // Optimistic update
         setHabits(prev => [newHabit, ...prev]);
+
+        try {
+            await apiCall('/habits', {
+                method: 'POST',
+                body: JSON.stringify(newHabit)
+            });
+        } catch (err: any) {
+            console.error('Failed to add habit:', err);
+            setHabits(prev => prev.filter(h => h.id !== newHabit.id));
+            setError(err.message);
+        }
     };
 
-    const toggleHabitCompletion = (id: string, date: Date) => {
+    const toggleHabitCompletion = async (id: string, date: Date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
+        const habit = habits.find(h => h.id === id);
+        if (!habit) return;
 
-        setHabits(prev => prev.map(habit => {
-            if (habit.id !== id) return habit;
+        const isCompleted = habit.completedDates.includes(dateStr);
+        let newCompletedDates;
 
-            const isCompleted = habit.completedDates.includes(dateStr);
-            let newCompletedDates;
+        if (isCompleted) {
+            newCompletedDates = habit.completedDates.filter(d => d !== dateStr);
+        } else {
+            newCompletedDates = [...habit.completedDates, dateStr];
+        }
 
-            if (isCompleted) {
-                newCompletedDates = habit.completedDates.filter(d => d !== dateStr);
-            } else {
-                newCompletedDates = [...habit.completedDates, dateStr];
-            }
+        const updatedHabit = {
+            ...habit,
+            completedDates: newCompletedDates,
+            streak: calculateStreak(newCompletedDates)
+        };
 
-            return {
-                ...habit,
-                completedDates: newCompletedDates,
-                streak: calculateStreak(newCompletedDates)
-            };
-        }));
+        // Optimistic update
+        setHabits(prev => prev.map(h => h.id === id ? updatedHabit : h));
+
+        try {
+            await apiCall(`/habits/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(updatedHabit)
+            });
+        } catch (err: any) {
+            console.error('Failed to toggle habit:', err);
+            setHabits(prev => prev.map(h => h.id === id ? habit : h));
+            setError(err.message);
+        }
     };
 
-    const deleteHabit = (id: string) => {
-        setHabits(prev => prev.filter(habit => habit.id !== id));
+    const deleteHabit = async (id: string) => {
+        const habit = habits.find(h => h.id === id);
+        if (!habit) return;
+
+        // Optimistic update
+        setHabits(prev => prev.filter(h => h.id !== id));
+
+        try {
+            await apiCall(`/habits/${id}`, {
+                method: 'DELETE'
+            });
+        } catch (err: any) {
+            console.error('Failed to delete habit:', err);
+            setHabits(prev => [...prev, habit]);
+            setError(err.message);
+        }
     };
 
     return (
-        <HabitContext.Provider value={{ habits, addHabit, toggleHabitCompletion, deleteHabit }}>
+        <HabitContext.Provider value={{ habits, addHabit, toggleHabitCompletion, deleteHabit, isLoading, error }}>
             {children}
         </HabitContext.Provider>
     );

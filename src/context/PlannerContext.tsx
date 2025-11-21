@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { apiCall } from '../utils/api';
 
 export interface TimeBlock {
     id: string;
@@ -14,6 +15,8 @@ interface PlannerContextType {
     blocks: TimeBlock[];
     addBlock: (block: Omit<TimeBlock, 'id'>) => void;
     deleteBlock: (id: string) => void;
+    isLoading: boolean;
+    error: string | null;
 }
 
 const PlannerContext = createContext<PlannerContextType | undefined>(undefined);
@@ -28,42 +31,69 @@ export const usePlanner = () => {
 
 export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [blocks, setBlocks] = useState<TimeBlock[]>([]);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Load from localStorage
+    // Load time blocks from API
     useEffect(() => {
-        const storedBlocks = localStorage.getItem('tracker_planner');
-        if (storedBlocks) {
+        const loadBlocks = async () => {
             try {
-                setBlocks(JSON.parse(storedBlocks));
-            } catch (e) {
-                console.error('Failed to parse planner blocks', e);
+                setIsLoading(true);
+                const data = await apiCall('/planner');
+                setBlocks(data);
+                setError(null);
+            } catch (err: any) {
+                console.error('Failed to load planner blocks:', err);
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
             }
-        }
-        setIsLoaded(true);
+        };
+
+        loadBlocks();
     }, []);
 
-    // Save to localStorage (only after initial load)
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('tracker_planner', JSON.stringify(blocks));
-        }
-    }, [blocks, isLoaded]);
-
-    const addBlock = (block: Omit<TimeBlock, 'id'>) => {
+    const addBlock = async (block: Omit<TimeBlock, 'id'>) => {
         const newBlock: TimeBlock = {
             ...block,
             id: crypto.randomUUID(),
         };
+
+        // Optimistic update
         setBlocks(prev => [...prev, newBlock]);
+
+        try {
+            await apiCall('/planner', {
+                method: 'POST',
+                body: JSON.stringify(newBlock)
+            });
+        } catch (err: any) {
+            console.error('Failed to add time block:', err);
+            setBlocks(prev => prev.filter(b => b.id !== newBlock.id));
+            setError(err.message);
+        }
     };
 
-    const deleteBlock = (id: string) => {
+    const deleteBlock = async (id: string) => {
+        const block = blocks.find(b => b.id === id);
+        if (!block) return;
+
+        // Optimistic update
         setBlocks(prev => prev.filter(b => b.id !== id));
+
+        try {
+            await apiCall(`/planner/${id}`, {
+                method: 'DELETE'
+            });
+        } catch (err: any) {
+            console.error('Failed to delete time block:', err);
+            setBlocks(prev => [...prev, block]);
+            setError(err.message);
+        }
     };
 
     return (
-        <PlannerContext.Provider value={{ blocks, addBlock, deleteBlock }}>
+        <PlannerContext.Provider value={{ blocks, addBlock, deleteBlock, isLoading, error }}>
             {children}
         </PlannerContext.Provider>
     );

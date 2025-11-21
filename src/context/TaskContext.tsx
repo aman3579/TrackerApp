@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { apiCall } from '../utils/api';
 
 export interface Task {
     id: string;
@@ -16,6 +17,8 @@ interface TaskContextType {
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     updateTask: (id: string, updates: Partial<Task>) => void;
+    isLoading: boolean;
+    error: string | null;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -30,29 +33,29 @@ export const useTasks = () => {
 
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Load from localStorage
+    // Load tasks from API
     useEffect(() => {
-        const storedTasks = localStorage.getItem('tracker_tasks');
-        if (storedTasks) {
+        const loadTasks = async () => {
             try {
-                setTasks(JSON.parse(storedTasks));
-            } catch (e) {
-                console.error('Failed to parse tasks', e);
+                setIsLoading(true);
+                const data = await apiCall('/tasks');
+                setTasks(data);
+                setError(null);
+            } catch (err: any) {
+                console.error('Failed to load tasks:', err);
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
             }
-        }
-        setIsLoaded(true);
+        };
+
+        loadTasks();
     }, []);
 
-    // Save to localStorage (only after initial load)
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('tracker_tasks', JSON.stringify(tasks));
-        }
-    }, [tasks, isLoaded]);
-
-    const addTask = (title: string, dueDate?: string, priority: 'low' | 'medium' | 'high' = 'medium') => {
+    const addTask = async (title: string, dueDate?: string, priority: 'low' | 'medium' | 'high' = 'medium') => {
         const newTask: Task = {
             id: crypto.randomUUID(),
             title,
@@ -61,27 +64,88 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             priority,
             createdAt: Date.now(),
         };
+
+        // Optimistic update
         setTasks(prev => [newTask, ...prev]);
+
+        try {
+            await apiCall('/tasks', {
+                method: 'POST',
+                body: JSON.stringify(newTask)
+            });
+        } catch (err: any) {
+            console.error('Failed to add task:', err);
+            // Rollback on error
+            setTasks(prev => prev.filter(t => t.id !== newTask.id));
+            setError(err.message);
+        }
     };
 
-    const toggleTask = (id: string) => {
-        setTasks(prev => prev.map(task =>
-            task.id === id ? { ...task, completed: !task.completed } : task
-        ));
+    const toggleTask = async (id: string) => {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        const updatedTask = { ...task, completed: !task.completed };
+
+        // Optimistic update
+        setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
+
+        try {
+            await apiCall(`/tasks/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(updatedTask)
+            });
+        } catch (err: any) {
+            console.error('Failed to toggle task:', err);
+            // Rollback on error
+            setTasks(prev => prev.map(t => t.id === id ? task : t));
+            setError(err.message);
+        }
     };
 
-    const deleteTask = (id: string) => {
-        setTasks(prev => prev.filter(task => task.id !== id));
+    const deleteTask = async (id: string) => {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        // Optimistic update
+        setTasks(prev => prev.filter(t => t.id !== id));
+
+        try {
+            await apiCall(`/tasks/${id}`, {
+                method: 'DELETE'
+            });
+        } catch (err: any) {
+            console.error('Failed to delete task:', err);
+            // Rollback on error
+            setTasks(prev => [...prev, task]);
+            setError(err.message);
+        }
     };
 
-    const updateTask = (id: string, updates: Partial<Task>) => {
-        setTasks(prev => prev.map(task =>
-            task.id === id ? { ...task, ...updates } : task
-        ));
+    const updateTask = async (id: string, updates: Partial<Task>) => {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        const updatedTask = { ...task, ...updates };
+
+        // Optimistic update
+        setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
+
+        try {
+            await apiCall(`/tasks/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(updatedTask)
+            });
+        } catch (err: any) {
+            console.error('Failed to update task:', err);
+            // Rollback on error
+            setTasks(prev => prev.map(t => t.id === id ? task : t));
+            setError(err.message);
+        }
     };
 
     return (
-        <TaskContext.Provider value={{ tasks, addTask, toggleTask, deleteTask, updateTask }}>
+        <TaskContext.Provider value={{ tasks, addTask, toggleTask, deleteTask, updateTask, isLoading, error }}>
             {children}
         </TaskContext.Provider>
     );

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { apiCall } from '../utils/api';
 
 export interface Transaction {
     id: string;
@@ -19,6 +20,8 @@ interface FinanceContextType {
     getIncome: () => number;
     getExpenses: () => number;
     getCategoryTotals: () => Record<string, number>;
+    isLoading: boolean;
+    error: string | null;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -33,39 +36,66 @@ export const useFinance = () => {
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Load from localStorage
+    // Load transactions from API
     useEffect(() => {
-        const storedTransactions = localStorage.getItem('tracker_transactions');
-        if (storedTransactions) {
+        const loadTransactions = async () => {
             try {
-                setTransactions(JSON.parse(storedTransactions));
-            } catch (e) {
-                console.error('Failed to parse transactions', e);
+                setIsLoading(true);
+                const data = await apiCall('/finance');
+                setTransactions(data);
+                setError(null);
+            } catch (err: any) {
+                console.error('Failed to load transactions:', err);
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
             }
-        }
-        setIsLoaded(true);
+        };
+
+        loadTransactions();
     }, []);
 
-    // Save to localStorage (only after initial load)
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('tracker_transactions', JSON.stringify(transactions));
-        }
-    }, [transactions, isLoaded]);
-
-    const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
+    const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
         const newTransaction: Transaction = {
             ...transaction,
             id: crypto.randomUUID(),
             createdAt: Date.now(),
         };
+
+        // Optimistic update
         setTransactions(prev => [newTransaction, ...prev]);
+
+        try {
+            await apiCall('/finance', {
+                method: 'POST',
+                body: JSON.stringify(newTransaction)
+            });
+        } catch (err: any) {
+            console.error('Failed to add transaction:', err);
+            setTransactions(prev => prev.filter(t => t.id !== newTransaction.id));
+            setError(err.message);
+        }
     };
 
-    const deleteTransaction = (id: string) => {
+    const deleteTransaction = async (id: string) => {
+        const transaction = transactions.find(t => t.id === id);
+        if (!transaction) return;
+
+        // Optimistic update
         setTransactions(prev => prev.filter(t => t.id !== id));
+
+        try {
+            await apiCall(`/finance/${id}`, {
+                method: 'DELETE'
+            });
+        } catch (err: any) {
+            console.error('Failed to delete transaction:', err);
+            setTransactions(prev => [...prev, transaction]);
+            setError(err.message);
+        }
     };
 
     const getIncome = () => {
@@ -102,7 +132,9 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
             getBalance,
             getIncome,
             getExpenses,
-            getCategoryTotals
+            getCategoryTotals,
+            isLoading,
+            error
         }}>
             {children}
         </FinanceContext.Provider>

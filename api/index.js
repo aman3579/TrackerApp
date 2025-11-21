@@ -28,14 +28,25 @@ connectDB();
 import Task from './models/Task.js';
 import Transaction from './models/Transaction.js';
 import TimeBlock from './models/TimeBlock.js';
+import Habit from './models/Habit.js';
 
-// Routes
+// Helper to get userId from headers or generate one
+const getUserId = (req) => {
+    return req.headers['x-user-id'] || 'default-user';
+};
 
-// Tasks
+// Root route
+app.get('/', (req, res) => {
+    res.json({ message: 'Tracker API is running', version: '2.0' });
+});
+
+// ==================== TASK ENDPOINTS ====================
+
 app.get('/api/tasks', async (req, res) => {
     await connectDB();
     try {
-        const tasks = await Task.find();
+        const userId = getUserId(req);
+        const tasks = await Task.find({ userId });
         res.json(tasks);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -45,25 +56,105 @@ app.get('/api/tasks', async (req, res) => {
 app.post('/api/tasks', async (req, res) => {
     await connectDB();
     try {
-        // The frontend sends the entire array, but for MongoDB we should ideally sync changes.
-        // For simplicity to match previous behavior: Delete all and insert all (inefficient but works for small data)
-        // OR better: The frontend should ideally send individual create/update/delete actions.
-        // BUT, the current frontend sends the WHOLE state.
-        // So we will replace the collection content.
+        const userId = getUserId(req);
+        const taskData = { ...req.body, userId };
+        const task = new Task(taskData);
+        await task.save();
+        res.status(201).json(task);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-        await Task.deleteMany({});
-        await Task.insertMany(req.body);
+app.put('/api/tasks/:id', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const task = await Task.findOneAndUpdate(
+            { id: req.params.id, userId },
+            req.body,
+            { new: true }
+        );
+        if (!task) return res.status(404).json({ error: 'Task not found' });
+        res.json(task);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/tasks/:id', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const task = await Task.findOneAndDelete({ id: req.params.id, userId });
+        if (!task) return res.status(404).json({ error: 'Task not found' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Finance
+// ==================== HABIT ENDPOINTS ====================
+
+app.get('/api/habits', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const habits = await Habit.find({ userId });
+        res.json(habits);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/habits', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const habitData = { ...req.body, userId };
+        const habit = new Habit(habitData);
+        await habit.save();
+        res.status(201).json(habit);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.put('/api/habits/:id', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const habit = await Habit.findOneAndUpdate(
+            { id: req.params.id, userId },
+            req.body,
+            { new: true }
+        );
+        if (!habit) return res.status(404).json({ error: 'Habit not found' });
+        res.json(habit);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/habits/:id', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const habit = await Habit.findOneAndDelete({ id: req.params.id, userId });
+        if (!habit) return res.status(404).json({ error: 'Habit not found' });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== FINANCE ENDPOINTS ====================
+
 app.get('/api/finance', async (req, res) => {
     await connectDB();
     try {
-        const transactions = await Transaction.find();
+        const userId = getUserId(req);
+        const transactions = await Transaction.find({ userId });
         res.json(transactions);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -73,19 +164,35 @@ app.get('/api/finance', async (req, res) => {
 app.post('/api/finance', async (req, res) => {
     await connectDB();
     try {
-        await Transaction.deleteMany({});
-        await Transaction.insertMany(req.body);
+        const userId = getUserId(req);
+        const transactionData = { ...req.body, userId };
+        const transaction = new Transaction(transactionData);
+        await transaction.save();
+        res.status(201).json(transaction);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/finance/:id', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const transaction = await Transaction.findOneAndDelete({ id: req.params.id, userId });
+        if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Planner
+// ==================== PLANNER ENDPOINTS ====================
+
 app.get('/api/planner', async (req, res) => {
     await connectDB();
     try {
-        const blocks = await TimeBlock.find();
+        const userId = getUserId(req);
+        const blocks = await TimeBlock.find({ userId });
         res.json(blocks);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -95,25 +202,29 @@ app.get('/api/planner', async (req, res) => {
 app.post('/api/planner', async (req, res) => {
     await connectDB();
     try {
-        await TimeBlock.deleteMany({});
-        await TimeBlock.insertMany(req.body);
+        const userId = getUserId(req);
+        const blockData = { ...req.body, userId };
+        const block = new TimeBlock(blockData);
+        await block.save();
+        res.status(201).json(block);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/planner/:id', async (req, res) => {
+    await connectDB();
+    try {
+        const userId = getUserId(req);
+        const block = await TimeBlock.findOneAndDelete({ id: req.params.id, userId });
+        if (!block) return res.status(404).json({ error: 'Time block not found' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Root route for testing
-app.get('/', (req, res) => {
-    res.send('Tracker API is running');
-});
-
-// Start server if running directly
-// In ES modules, require.main === module is not available. 
-// We can check if the file is being run directly by comparing import.meta.url
-// However, for simplicity in this setup, we'll just listen if not imported (Vercel imports it).
-// But Vercel expects the app to be exported.
-// A common pattern for Vercel + Local:
+// Start server if running locally
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
