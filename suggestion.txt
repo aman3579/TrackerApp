@@ -1,0 +1,293 @@
+Yes — here is **Option 1: A complete App Sitemap + Screen-by-Screen Wireframe Outline** for your Tracker App.
+
+---
+
+# **📌 APP SITEMAP (Click-Flow Structure)**
+
+This shows every main screen and how users navigate.
+
+### **1. Onboarding**
+
+* Welcome Screen
+* Choose Trackers (Task / Habit / Weekly Planner / Finance / Combo)
+* Basic Setup (name, timezone, goals)
+* Import Data (Google Sheets / CSV)
+
+---
+
+### **2. Home / Dashboard**
+
+* Today Overview
+
+  * Top 3 Tasks
+  * Habit Streak Preview
+  * Weekly Planner Summary
+  * Finance Snapshot
+* Quick Add (+)
+
+  * Task
+  * Habit
+  * Expense
+  * Time Block
+
+---
+
+### **3. Task Tracker**
+
+* Task List (Main Screen)
+* Kanban View
+* Calendar View
+* Task Details Page
+
+  * Title, description, priority
+  * Due date, reminders
+  * Recurrence
+  * Tags/Project
+  * Attachments
+* Filters & Sorting
+* Completed Tasks Archive
+
+---
+
+### **4. Habit Tracker**
+
+* Habit Dashboard (Daily Checklist)
+* Habit Details Page
+
+  * Schedule (daily/weekly/custom)
+  * Notes
+  * Goals
+* Streak Page (Heatmap)
+* Habit Trends (Graphs: 7/30/90-day)
+
+---
+
+### **5. Weekly Planner**
+
+* Weekly Calendar Board
+* Add Time Block (with color categories)
+* Link Tasks to Time Blocks
+* Week Goals
+* Review & Reflect Screen
+
+---
+
+### **6. Finance Tracker**
+
+* Overview / Dashboard
+
+  * Income
+  * Expenses
+  * Savings
+  * Budget Progress
+* Add Transaction
+* Category Manager
+* Spending Trends
+* Monthly Reports
+* Export CSV / PDF
+
+---
+
+### **7. Combo Mode**
+
+(Everything in one synchronized view)
+
+* Daily Combo View
+
+  * Tasks
+  * Habits
+  * Time Blocks
+  * Money Spent Today
+* Weekly Combo View
+* Combo Insights (AI suggestions optional)
+
+---
+
+### **8. Analytics & Reports**
+
+* Productivity Trends
+* Habit Trends
+* Task Completion Rate
+* Finance Trends
+* Export Report (PDF/CSV)
+
+---
+
+### **9. Settings**
+
+* Profile
+* Theme / Colors
+* Notifications
+* Integrations (Google Calendar, Sheets, etc.)
+* Backup & Export
+* Privacy / Lock Screen
+
+---
+
+# **📌 SCREEN-BY-SCREEN WIREFRAME OUTLINE**
+
+Below is how every screen will look structurally.
+
+---
+
+## **1. Welcome Screen**
+
+* Logo
+* Tagline (“Your Personal Productivity & Life Tracker”)
+* Buttons: **Get Started**, **Import Data**
+
+---
+
+## **2. Choose Trackers (Modular)**
+
+A grid of cards:
+
+| Icon | Name            | Toggle  |
+| ---- | --------------- | ------- |
+| 📋   | Task Tracker    | ON/OFF  |
+| ✔️   | Habit Tracker   | ON/OFF  |
+| 📅   | Weekly Planner  | ON/OFF  |
+| 💸   | Finance Tracker | ON/OFF  |
+| 🔗   | Combo Mode      | Auto ON |
+
+---
+
+## **3. Dashboard**
+
+**Top Section**
+
+* Greetings (“Good Afternoon, Aman”)
+* Today's Date
+* Quick Add Button (+)
+
+**Widgets Area**
+
+* Today’s Tasks (3 tasks + See All)
+* Habit Streak Ring
+* Weekly Planner schedule snippet
+* Finance Today’s Spend
+
+**Bottom Bar Navigation**
+
+* Home | Tasks | Habits | Planner | Finance
+
+---
+
+## **4. Task Tracker**
+
+### **Task List View**
+
+* Search bar
+* Filter: Priority | Date | Project
+* List of tasks:
+
+```
+[ ] Task title
+    Due: DD/MM | Priority: High
+```
+
+### **Task Details**
+
+* Title (editable)
+* Notes
+* Due Date
+* Recurring Rule
+* Priority Toggle
+* Tag selection
+* Reminders
+* Delete button
+
+---
+
+## **5. Habit Tracker**
+
+### **Daily View**
+
+A grid of habits with checkboxes:
+
+```
+□ Drink Water — Daily  
+□ Read 20 pages — M/T/W/Th/F
+□ Gym — M/W/F
+```
+
+### **Progress View**
+
+* Heatmap (like GitHub contribution style)
+* Graph showing completion %
+
+---
+
+## **6. Weekly Planner**
+
+### **Weekly Calendar Board**
+
+Horizontal top — Mon | Tue | Wed | Thu | Fri | Sat | Sun
+Vertical — Time blocks
+
+You can drag & add time blocks:
+
+```
+9–11 AM: Study  
+2–3 PM: Gym  
+7–9 PM: Research Work
+```
+
+### **Week Goal Panel**
+
+* Top 3 priorities
+* Tasks connected to planner
+
+---
+
+## **7. Finance Tracker**
+
+### **Dashboard**
+
+* Balance (Income – Expenses)
+* Pie chart (by category)
+* Recent transactions list
+
+### **Add Entry**
+
+* Amount
+* Category
+* Date
+* Recurrence
+* Notes
+
+### **Trends**
+
+* Monthly bar chart
+* Budget progress circle
+
+---
+
+## **8. Combo Mode**
+
+### **Daily Combo**
+
+* Timeline of tasks + time blocks
+* Habits to check
+* Expenses of the day
+* AI suggestions panel (optional)
+
+### **Weekly Combo**
+
+* Integrated weekly view
+* Tasks scattered across week
+* Habit fulfillment percentages
+* Weekly finance summary
+
+---
+
+## **9. Settings**
+
+* Your Profile
+* Theme (Light/Dark/Custom Colors)
+* Integrations
+* Backups
+* Auto-export
+* Security PIN
+
+---
