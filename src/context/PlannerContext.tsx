@@ -29,21 +29,23 @@ export const usePlanner = () => {
 export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [blocks, setBlocks] = useState<TimeBlock[]>([]);
 
-    // Load from local storage
+    // Load from API
     useEffect(() => {
-        const storedBlocks = localStorage.getItem('tracker_planner');
-        if (storedBlocks) {
-            try {
-                setBlocks(JSON.parse(storedBlocks));
-            } catch (e) {
-                console.error('Failed to parse planner blocks', e);
-            }
-        }
+        fetch('http://localhost:3001/api/planner')
+            .then(res => res.json())
+            .then(data => setBlocks(data))
+            .catch(err => console.error('Failed to load planner blocks', err));
     }, []);
 
-    // Save to local storage
+    // Save to API
     useEffect(() => {
-        localStorage.setItem('tracker_planner', JSON.stringify(blocks));
+        if (blocks.length > 0) {
+            fetch('http://localhost:3001/api/planner', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(blocks)
+            }).catch(err => console.error('Failed to save planner blocks', err));
+        }
     }, [blocks]);
 
     const addBlock = (block: Omit<TimeBlock, 'id'>) => {

@@ -31,21 +31,23 @@ export const useTasks = () => {
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
 
-    // Load from local storage
+    // Load from API
     useEffect(() => {
-        const storedTasks = localStorage.getItem('tracker_tasks');
-        if (storedTasks) {
-            try {
-                setTasks(JSON.parse(storedTasks));
-            } catch (e) {
-                console.error('Failed to parse tasks', e);
-            }
-        }
+        fetch('http://localhost:3001/api/tasks')
+            .then(res => res.json())
+            .then(data => setTasks(data))
+            .catch(err => console.error('Failed to load tasks', err));
     }, []);
 
-    // Save to local storage
+    // Save to API
     useEffect(() => {
-        localStorage.setItem('tracker_tasks', JSON.stringify(tasks));
+        if (tasks.length > 0) {
+            fetch('http://localhost:3001/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(tasks)
+            }).catch(err => console.error('Failed to save tasks', err));
+        }
     }, [tasks]);
 
     const addTask = (title: string, dueDate?: string, priority: 'low' | 'medium' | 'high' = 'medium') => {

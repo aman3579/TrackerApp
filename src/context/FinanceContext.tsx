@@ -34,21 +34,23 @@ export const useFinance = () => {
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-    // Load from local storage
+    // Load from API
     useEffect(() => {
-        const storedTransactions = localStorage.getItem('tracker_finance');
-        if (storedTransactions) {
-            try {
-                setTransactions(JSON.parse(storedTransactions));
-            } catch (e) {
-                console.error('Failed to parse transactions', e);
-            }
-        }
+        fetch('http://localhost:3001/api/finance')
+            .then(res => res.json())
+            .then(data => setTransactions(data))
+            .catch(err => console.error('Failed to load transactions', err));
     }, []);
 
-    // Save to local storage
+    // Save to API
     useEffect(() => {
-        localStorage.setItem('tracker_finance', JSON.stringify(transactions));
+        if (transactions.length > 0) {
+            fetch('http://localhost:3001/api/finance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(transactions)
+            }).catch(err => console.error('Failed to save transactions', err));
+        }
     }, [transactions]);
 
     const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
