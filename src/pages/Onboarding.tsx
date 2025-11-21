@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import {
     Box,
     Container,
@@ -33,8 +33,7 @@ const modules = [
     { id: 'finance', label: 'Finance', icon: FinanceIcon, color: '#f59e0b', description: 'Track income & expenses' },
 ];
 
-const Onboarding = () => {
-    const navigate = useNavigate();
+const Onboarding = ({ onComplete }: { onComplete: () => void }) => {
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
     const [selectedModules, setSelectedModules] = useState<string[]>(['tasks', 'habits']);
@@ -54,7 +53,7 @@ const Onboarding = () => {
             localStorage.setItem('tracker_username', name);
             localStorage.setItem('tracker_modules', JSON.stringify(selectedModules));
             localStorage.setItem('tracker_onboarded', 'true');
-            navigate('/');
+            onComplete();
         }
     };
 

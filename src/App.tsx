@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import Dashboard from './pages/Dashboard';
@@ -88,8 +89,11 @@ const darkTheme = createTheme({
 });
 
 function App() {
-  // TODO: Check if user is onboarded (persist in localStorage)
-  const isOnboarded = localStorage.getItem('tracker_onboarded') === 'true';
+  const [isOnboarded, setIsOnboarded] = useState(() => localStorage.getItem('tracker_onboarded') === 'true');
+
+  const handleOnboardingComplete = () => {
+    setIsOnboarded(true);
+  };
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -101,7 +105,7 @@ function App() {
               <Router>
                 {!isOnboarded ? (
                   <Routes>
-                    <Route path="/" element={<Onboarding />} />
+                    <Route path="/" element={<Onboarding onComplete={handleOnboardingComplete} />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 ) : (
