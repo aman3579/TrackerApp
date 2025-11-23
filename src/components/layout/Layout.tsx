@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import {
     Box,
     Drawer,
@@ -18,6 +19,7 @@ import {
     useMediaQuery,
     useTheme,
     Stack,
+    Button,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -29,6 +31,12 @@ import {
     GridView as ComboIcon,
     BarChart as AnalyticsIcon,
     Settings as SettingsIcon,
+    School as StudyIcon,
+    FitnessCenter as ExerciseIcon,
+    SelfImprovement as WellnessIcon,
+    Mood as MoodIcon,
+    EmojiEvents as GoalsIcon,
+    Logout as LogoutIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 260;
@@ -39,6 +47,11 @@ const navItems = [
     { label: 'Habits', path: '/habits', icon: HabitsIcon },
     { label: 'Planner', path: '/planner', icon: PlannerIcon },
     { label: 'Finance', path: '/finance', icon: FinanceIcon },
+    { label: 'Study Hacks', path: '/study', icon: StudyIcon },
+    { label: 'Exercise', path: '/exercise', icon: ExerciseIcon },
+    { label: 'Wellness', path: '/wellness', icon: WellnessIcon },
+    { label: 'Mood Journal', path: '/mood', icon: MoodIcon },
+    { label: 'Goals', path: '/goals', icon: GoalsIcon },
     { label: 'Combo', path: '/combo', icon: ComboIcon },
     { label: 'Analytics', path: '/analytics', icon: AnalyticsIcon },
     { label: 'Settings', path: '/settings', icon: SettingsIcon },
@@ -50,8 +63,9 @@ const Layout = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { currentUser, logout } = useAuth();
 
-    const userName = localStorage.getItem('tracker_username') || 'User';
+    const userName = currentUser?.username || 'User';
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
@@ -86,7 +100,7 @@ const Layout = () => {
             <Divider />
 
             {/* Navigation List */}
-            <List sx={{ flex: 1, px: 1, pt: 2 }}>
+            <List sx={{ flex: 1, px: 1, pt: 2, overflowY: 'auto' }}>
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path;
@@ -123,8 +137,21 @@ const Layout = () => {
 
             <Divider />
 
-            {/* Footer */}
+            {/* Footer with Logout */}
             <Box sx={{ p: 2 }}>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    color="error"
+                    startIcon={<LogoutIcon />}
+                    onClick={() => {
+                        logout();
+                        navigate('/login');
+                    }}
+                    sx={{ mb: 1 }}
+                >
+                    Logout
+                </Button>
                 <Typography variant="caption" color="text.secondary" align="center" display="block">
                     © 2024 Tracker App
                 </Typography>

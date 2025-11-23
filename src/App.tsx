@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import Dashboard from './pages/Dashboard';
@@ -9,13 +8,30 @@ import FinanceTracker from './pages/FinanceTracker';
 import ComboMode from './pages/ComboMode';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
-import Onboarding from './pages/Onboarding';
+import StudyHacks from './pages/StudyHacks';
+import ExerciseTracker from './pages/ExerciseTracker';
+import Wellness from './pages/Wellness';
+import MoodJournal from './pages/MoodJournal';
+import Goals from './pages/Goals';
+import Login from './pages/Login';
 import Layout from './components/layout/Layout';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext';
 import { HabitProvider } from './context/HabitContext';
 import { PlannerProvider } from './context/PlannerContext';
 import { FinanceProvider } from './context/FinanceContext';
+import { StudyProvider } from './context/StudyContext';
+import { ExerciseProvider } from './context/ExerciseContext';
+import { WellnessProvider } from './context/WellnessContext';
+import { MoodProvider } from './context/MoodContext';
+import { GoalProvider } from './context/GoalContext';
 import './styles/index.css';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
 
 const darkTheme = createTheme({
   palette: {
@@ -89,47 +105,61 @@ const darkTheme = createTheme({
 });
 
 function App() {
-  const [isOnboarded, setIsOnboarded] = useState(() => localStorage.getItem('tracker_onboarded') === 'true');
-
-  const handleOnboardingComplete = () => {
-    setIsOnboarded(true);
-  };
-
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <TaskProvider>
-        <HabitProvider>
-          <FinanceProvider>
-            <PlannerProvider>
-              <Router>
-                {!isOnboarded ? (
-                  <Routes>
-                    <Route path="/" element={<Onboarding onComplete={handleOnboardingComplete} />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                ) : (
-                  <Routes>
-                    <Route path="/" element={<Layout />}>
-                      <Route index element={<Dashboard />} />
-                      <Route path="tasks" element={<TaskTracker />} />
-                      <Route path="habits" element={<HabitTracker />} />
-                      <Route path="planner" element={<Planner />} />
-                      <Route path="finance" element={<FinanceTracker />} />
-                      <Route path="combo" element={<ComboMode />} />
-                      <Route path="analytics" element={<Analytics />} />
-                      <Route path="settings" element={<Settings />} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                )}
-              </Router>
-            </PlannerProvider>
-          </FinanceProvider>
-        </HabitProvider>
-      </TaskProvider>
+      <AuthProvider>
+        <TaskProvider>
+          <HabitProvider>
+            <FinanceProvider>
+              <PlannerProvider>
+                <StudyProvider>
+                  <ExerciseProvider>
+                    <WellnessProvider>
+                      <MoodProvider>
+                        <GoalProvider>
+                          <Router>
+                            <Routes>
+                              {/* Public Route */}
+                              <Route path="/login" element={<Login />} />
+
+                              {/* Protected Routes */}
+                              <Route path="/" element={
+                                <ProtectedRoute>
+                                  <Layout />
+                                </ProtectedRoute>
+                              }>
+                                <Route index element={<Dashboard />} />
+                                <Route path="tasks" element={<TaskTracker />} />
+                                <Route path="habits" element={<HabitTracker />} />
+                                <Route path="planner" element={<Planner />} />
+                                <Route path="finance" element={<FinanceTracker />} />
+                                <Route path="study" element={<StudyHacks />} />
+                                <Route path="exercise" element={<ExerciseTracker />} />
+                                <Route path="wellness" element={<Wellness />} />
+                                <Route path="mood" element={<MoodJournal />} />
+                                <Route path="goals" element={<Goals />} />
+                                <Route path="combo" element={<ComboMode />} />
+                                <Route path="analytics" element={<Analytics />} />
+                                <Route path="settings" element={<Settings />} />
+                              </Route>
+
+                              {/* Catch all */}
+                              <Route path="*" element={<Navigate to="/login" replace />} />
+                            </Routes>
+                          </Router>
+                        </GoalProvider>
+                      </MoodProvider>
+                    </WellnessProvider>
+                  </ExerciseProvider>
+                </StudyProvider>
+              </PlannerProvider>
+            </FinanceProvider>
+          </HabitProvider>
+        </TaskProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
-}
+};
 
 export default App;
